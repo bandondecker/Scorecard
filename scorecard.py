@@ -2,10 +2,44 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
 
+
+# =============================================================================
+# Set global defaults
+# =============================================================================
+totalxunits = 21.6 #Width in cm = 21.59
+totalyunits = 27.9 #Height in cm = 27.94
+
+boxwidth = 21.5/17.0 #Original boxwidth was 2, in arbitrary units. Now should be in cm, or so.
+
+framecolour = 'red'
+dashed_linewidth = 0.07
+lineup_dashstyle = tuple(np.array((1.0,1.0))*25/(0.5*boxwidth))
+diamond_dashstyle = tuple(np.array((1.5,1.5))*7.5/(0.35*boxwidth))
+solid_linewidth = 0.5
+textfontsize = 8
+
+
+# =============================================================================
+# Code to create the card and define the dimensions
+# =============================================================================
+def initialiseCard(totalxunits:float, totalyunits:float):
+    totalpage = plt.figure()
+    # For some reason this always produces unreasonable margins
+    # totalpage.set_size_inches(8.5, 11.0)
+    scale = 1.2
+    totalpage.set_size_inches(8.5*scale, 11.0*scale)
+    card = totalpage.add_subplot(111)
+    card.set_xlim(0,totalxunits)
+    card.set_ylim(0,totalyunits)
+    card.set_axis_off()
+    
+    return totalpage, card
+
+
 # =============================================================================
 # Functions for making the design of the individual cells
 # =============================================================================
-def makeDiamond(card,x,y,boxwdith,dashstyle,colour='r',linewidth=0.1):
+def makeDiamond(card, x, y, boxwdith, dashstyle, colour='r', linewidth=dashed_linewidth):
     card.plot([x,x+0.5*boxwidth/2.0],[y-0.5*boxwidth/2.0,y],c=colour,dashes=dashstyle,lw=linewidth)
     card.plot([x+0.5*boxwidth/2.0,x],[y,y+0.5*boxwidth/2.0],c=colour,dashes=dashstyle,lw=linewidth)
     card.plot([x,x-0.5*boxwidth/2.0],[y+0.5*boxwidth/2.0,y],c=colour,dashes=dashstyle,lw=linewidth)
@@ -36,183 +70,210 @@ def makeFoulPitch(card,x,y,boxwdith,colour='r',linewidth=0.1):
 # =============================================================================
 # Function to read in the team/lineup data
 # =============================================================================
-def getData(fn,homeaway):
+def getData(fn:str,home:bool):
+    idx = np.abs(home - 1)
     lines = open(fn).readlines()
     date = lines[0][:-1]
     venue = lines[1][:-1]
-    longnames = lines[2][:-1].split(' v ')
-    shortnames = lines[3][:-1].split(' v ')
-    if homeaway == 'Home':
-        ind = 0
-    elif homeaway == 'Away':
-        ind = 1
-    longname = longnames[ind].split('(')[0][:-1]
-    record = longnames[ind].split('(')[1][:-1]
+    home_region, away_region = lines[2][:-1].split(' v ')
+    region_name = lines[2][:-1].split(' v ')[idx]
+    nickname = lines[3][:-1].split(' v ')[idx]
+    record = lines[4][:-1].split(' v ')[idx]
     
     lineup = []
-    for i in range(5,14):
-        entry = lines[i][:-1].split('\t')[ind]
+    for i in range(6,15):
+        entry = lines[i][:-1].split(' v ')[idx]
         lineup.append(entry)
-    pitcher = lines[15][:-1].split('\t')[ind]
+    pitcher = lines[16][:-1].split(' v ')[idx]
 
-    data = {'date':date,'venue':venue,'longname':longname,'record':record,'shortnames':shortnames,'lineup':lineup,'pitcher':pitcher}
+    data = {'date':date,'venue':venue,'home':home_region,'away':away_region,'region':region_name,'nickname':nickname,'record':record,'lineup':lineup,'pitcher':pitcher}
     return data
 
 
 # =============================================================================
-# Code to build the full scorecard
+# Code to build the large grid elements
 # =============================================================================
-scorecard_dir = os.getcwd()
-
-totalxunits = 8.5*2.54 #Width in cm = 21.59
-totalyunits = 11*2.54 #Height in cm = 27.94
-
-boxwidth = 21.5/17.0 #Original boxwidth was 2, in arbitrary units. Now should be in cm, or so.
-#Redefine everything else to be in units of this, then scale as needed
-namewidth = 3*boxwidth
-teamwidth = 4*boxwidth
-boxheight = boxwidth #2 At least right now I think these should always be symmetric
-pitchlineheight = boxheight*0.65 #Height of the boxes for pitching line and line score
-lowmargin = 2.5*boxheight
-highmargin = 3*boxheight #As written, I don't think this actually does anything
-leftmargin = 0.01
-rightmargin = 0 #I think this is also irrelevant now. They were just for scaling originally
-pitchbase = lowmargin + 4*pitchlineheight
-boxbase = pitchbase + 8*pitchlineheight
-
-framecolour = 'red'
-dashed_linewidth = 0.1
-lineup_dashstyle = tuple(np.array((1.0,1.0))*25/(0.5*boxwidth))
-diamond_dashstyle = tuple(np.array((1.5,1.5))*7.5/(0.35*boxwidth))
-solid_linewdith = 0.5
-textfontsize = 10
-
-if len(sys.argv) > 1:
-    homeaway = sys.argv[1]
-else:
-    homeaway = 'Test'
-
-if len(sys.argv) > 2:
-    gamedata = getData(sys.argv[2],homeaway)
-
-totalpage,card = plt.subplots(nrows=1,subplot_kw={'aspect':'equal','ylim':(0,totalyunits),'xlim':(0,totalxunits)})
-totalpage.set_size_inches(8.5*21.59/16.59,11.0*27.94/21.46) #See ruler.py for why this stupid hack seems to work
-card.set_axis_off()
-#card = plt.axes(aspect='equal',ylim=(0,totalyunits),xlim=(0,totalxunits))
-
-#Make line score
-for i in range(3):
-    if i < 2:
-        card.axhspan(ymin=lowmargin+i*pitchlineheight,ymax=lowmargin+(i+1)*pitchlineheight,xmin=leftmargin/totalxunits,xmax=(leftmargin+teamwidth)/totalxunits,ec=framecolour,fc='w',lw=0.5)
-    for j in range(13):
-        card.axhspan(ymin=lowmargin+i*pitchlineheight,ymax=lowmargin+(i+1)*pitchlineheight,xmin=(leftmargin+teamwidth+(j*boxwidth))/totalxunits,xmax=(leftmargin+teamwidth+((j+1)*boxwidth))/totalxunits,ec=framecolour,fc='w',lw=0.5)
-
-#Make pitching stat box
-for i in range(7):
-    card.axhspan(ymin=pitchbase+i*pitchlineheight,ymax=pitchbase+(i+1)*pitchlineheight,xmin=leftmargin/totalxunits,xmax=(leftmargin+0.5*boxwidth)/totalxunits,ec=framecolour,fc='w',lw=0.5)
-    card.axhspan(ymin=pitchbase+i*pitchlineheight,ymax=pitchbase+(i+1)*pitchlineheight,xmin=(leftmargin+0.5*boxwidth)/totalxunits,xmax=(leftmargin+0.5*boxwidth+(namewidth+0.5*boxwidth))/totalxunits,ec=framecolour,fc='w',lw=0.5)
-    for j in range(8):
-        card.axhspan(ymin=pitchbase+i*pitchlineheight,ymax=pitchbase+(i+1)*pitchlineheight,xmin=((leftmargin+0.5*boxwidth+(namewidth+0.5*boxwidth))+j*boxwidth)/totalxunits,xmax=((leftmargin+0.5*boxwidth+(namewidth+0.5*boxwidth))+(j+1)*boxwidth)/totalxunits,ec=framecolour,fc='w',lw=0.5)
-
-#Make box score
-#horizwidths = [1,namewidth,1,boxwidth,boxwidth,boxwidth,boxwidth,boxwidth,boxwidth,boxwidth,boxwidth,boxwidth,boxwidth,1,1,1,1,1,1]
-horizwidths = np.array([0.5, 3, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])*boxwidth
-
-for j in range(len(horizwidths)):
-    #card.axhspan(ymin=boxbase+0,ymax=boxbase+0+1,xmin=(leftmargin+np.sum(horizwidths[:j+1])-horizwidths[j])/totalxunits,xmax=(leftmargin+np.sum(horizwidths[:j+1]))/totalxunits,ec=framecolour,fc='w',lw=0.5)
-    card.axhspan(ymin=boxbase+0,ymax=boxbase+0+0.5*boxheight,xmin=(leftmargin+np.sum(horizwidths[:j+1])-horizwidths[j])/totalxunits,xmax=(leftmargin+np.sum(horizwidths[:j+1]))/totalxunits,ec=framecolour,fc='w',lw=0.5)
-for i in np.arange(0.5,9,1):#boxheight*9,boxheight):
-    for j in np.arange(len(horizwidths)):
-        card.axhspan(ymin=boxbase+i*boxheight,ymax=boxbase+(i*boxheight)+(boxheight),xmin=(leftmargin+np.sum(horizwidths[:j+1])-horizwidths[j])/totalxunits,xmax=(leftmargin+np.sum(horizwidths[:j+1]))/totalxunits,ec=framecolour,fc='w',lw=0.5)
-for j in range(len(horizwidths)):
-    card.axhspan(ymin=boxbase+9.5*boxheight,ymax=boxbase+10*boxheight,xmin=(leftmargin+np.sum(horizwidths[:j+1])-horizwidths[j])/totalxunits,xmax=(leftmargin+np.sum(horizwidths[:j+1]))/totalxunits,ec=framecolour,fc='w',lw=0.5)
-
-for i in np.arange(1,10):#*2:
-    card.axhline(y=boxbase+i*boxheight,xmin=leftmargin/totalxunits,xmax=(leftmargin+np.sum(horizwidths[:3]))/totalxunits,c=framecolour,dashes=lineup_dashstyle,lw=dashed_linewidth)
-    card.axhline(y=boxbase+i*boxheight,xmin=(leftmargin+np.sum(horizwidths[:13]))/totalxunits,xmax=(leftmargin+np.sum(horizwidths))/totalxunits,c=framecolour,dashes=lineup_dashstyle,lw=dashed_linewidth)
-
-#Make diamonds
-for i in range(1,10):
-    for j in range(10):
-        centrex = leftmargin+np.sum(horizwidths[:3])+(j+0.5)*boxwidth
-        centrey = boxbase+i*boxheight
-        makeDiamond(card,centrex,centrey,boxwidth,dashstyle=diamond_dashstyle,colour=framecolour,linewidth=dashed_linewidth)
-        makeRBI(card,centrex,centrey,boxwidth,colour=framecolour,linewidth=dashed_linewidth)
-        makeBallStrike(card,centrex,centrey,boxwidth,colour=framecolour,linewidth=dashed_linewidth)
-        makeFoulPitch(card,centrex,centrey,boxwidth,colour=framecolour,linewidth=dashed_linewidth)
-
-#Add text
-#Numbers
-for i in range(1,11):
-    card.text(leftmargin+np.sum(horizwidths[:3])+(i-0.5)*boxwidth,lowmargin+2.5*pitchlineheight,str(i),fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
-    card.text(leftmargin+np.sum(horizwidths[:3])+(i-0.5)*boxwidth,boxbase+19.5*boxheight*0.5,str(i),fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
-
-#RHE
-card.text(leftmargin+np.sum(horizwidths[:3])+(10.5)*boxwidth,lowmargin+2.5*pitchlineheight,'R',fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
-card.text(leftmargin+np.sum(horizwidths[:3])+(11.5)*boxwidth,lowmargin+2.5*pitchlineheight,'H',fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
-card.text(leftmargin+np.sum(horizwidths[:3])+(12.5)*boxwidth,lowmargin+2.5*pitchlineheight,'E',fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
-
-#Box score headers
-cols = ['AB','R','H','RBI','BB','SO']
-for j in range(6):
-    card.text((leftmargin+np.sum(horizwidths[:13])+(j+0.5)*boxwidth*0.5),boxbase+19.5*0.5*boxheight,cols[j],fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
-
-#Pitching headers
-cols = ['IP','PC','H','R','ER','BB','SO','W/L']
-for j in range(8):
-    card.text((leftmargin+np.sum(horizwidths[:3])+(j+0.5)*boxwidth),pitchbase+6.5*(pitchlineheight),cols[j],fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
-
-#Name headers
-for i in [pitchbase+6.5*(pitchlineheight),boxbase+19.5*0.5*boxheight]:
-    card.text((leftmargin+0.25*boxwidth),i,'No.',fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
+vertical_locations = np.cumsum([0, 0.5, 3, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
     
-    card.text((leftmargin+0.75*boxwidth),i,'Name',fontsize=textfontsize,color=framecolour, horizontalalignment='left',verticalalignment='center')
+    boxheight = boxwidth # The boxes in this section are symmetric
     
-card.text((leftmargin+np.sum(horizwidths[:2])+0.25*boxwidth),boxbase+19.5*0.5*boxheight,'Pos',fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
+    # Define which of the vertical lines to use
+    # For this, it's all 19 of them
+    vertical_booleans = np.array([True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True])
+    vertlines = left_margin + (vertical_locations[vertical_booleans == True])*boxwidth
 
-#Total line
-card.text((leftmargin+np.sum(horizwidths[:1])+0.5*boxwidth),boxbase+0.25*boxheight,'Totals (R/H/LoB)',fontsize=textfontsize,color=framecolour, horizontalalignment='left',verticalalignment='center')
-for j in range(3,13):
-    card.text((leftmargin+np.sum(horizwidths[:j])+0.5*boxwidth),boxbase+0.25*boxheight,'/   /',fontsize=textfontsize,color=framecolour, horizontalalignment='center',verticalalignment='center')
+    # Solid row heights
+    heights = np.array([0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5]) * boxheight
+    horizsolidlines = np.concatenate([[totalyunits - top_margin], (totalyunits - top_margin) - heights.cumsum()])
 
-#Header
-lowhead = 'Venue:{0: <60}Date:{0: <40}Attendance:{0: <25}Time:'.format('')
-card.text(leftmargin,boxbase+20.5*0.5*boxheight,lowhead,fontsize=textfontsize,color=framecolour, horizontalalignment='left',verticalalignment='center')
-
-card.text(leftmargin,boxbase+22.5*0.5*boxheight,homeaway+' Team (Record):',fontsize=textfontsize,color=framecolour, horizontalalignment='left',verticalalignment='center')
-
-if len(sys.argv) <= 2:
-    plt.savefig(os.path.join(scorecard_dir, 'scorecard_'+homeaway.lower()+'.pdf'),bbox_inches='tight')
-
-else:
-    ## Teams
-    for i in range(2):
-        card.text(leftmargin+0.25*boxwidth, lowmargin+(0.5+i)*pitchlineheight, gamedata['shortnames'][i], fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
-
-    ## Pitcher info
-    pitchno, pitchname = gamedata['pitcher'].split(':')
-    # Number
-    card.text(leftmargin+0.25*boxwidth,pitchbase+5.5*(pitchlineheight),pitchno,fontsize=textfontsize,color='k', horizontalalignment='center',verticalalignment='center')
-    # Name
-    card.text(leftmargin+0.75*boxwidth,pitchbase+5.5*(pitchlineheight),pitchname,fontsize=textfontsize,color='k', horizontalalignment='left',verticalalignment='center')
-
-    ## Linuep
+    # Solid lines
+    for vl in vertlines:
+        card.plot([vl, vl], [horizsolidlines[-1], horizsolidlines[0]], ls='-', lw=solid_linewidth, c=framecolour)
+    for hsl in horizsolidlines:
+        card.plot([vertlines[0], vertlines[-1]], [hsl, hsl], ls='-', lw=solid_linewidth, c=framecolour)
+    
+    # Dashed lines
+    horizdashedlines = []
     for i in range(9):
-        number,name,pos = gamedata['lineup'][i].split(':')
-        # Number
-        card.text(leftmargin+0.25*boxwidth,boxbase+(18.5-i*2)*0.5*boxheight,number,fontsize=textfontsize,color='k', horizontalalignment='center',verticalalignment='center')
-        # Name
-        card.text(leftmargin+0.75*boxwidth,boxbase+(18.5-i*2)*0.5*boxheight,name,fontsize=textfontsize,color='k', horizontalalignment='left',verticalalignment='center')
-        # Position
-        card.text(leftmargin+np.sum(horizwidths[:2])+0.25*boxwidth,boxbase+(18.5-i*2)*0.5*boxheight,pos,fontsize=textfontsize,color='k', horizontalalignment='center',verticalalignment='center')
+        # TODO: Define variable for how far down the frame to put the dashed line
+        # And sync them to the names below
+        horizdashedlines.append(totalyunits - top_margin - (0.5 + i+0.4)*boxheight)
+        horizdashedlines.append(totalyunits - top_margin - (0.5 + i+0.7)*boxheight)
+
+    for hdl in horizdashedlines:
+        card.plot([vertlines[0], vertlines[3]], [hdl, hdl], dashes=lineup_dashstyle, lw=dashed_linewidth, c=framecolour)
+        card.plot([vertlines[12], vertlines[-1]], [hdl, hdl], dashes=lineup_dashstyle, lw=dashed_linewidth, c=framecolour)
+
+    #Make diamonds
+    for i in range(3,12): # Horizontal values of innings
+        centrex = (vertlines[i] + vertlines[i+1])/2.0
+        for j in range(1,10): # Vertical values of batting order
+            centrey = (horizsolidlines[j] + horizsolidlines[j+1])/2.0
+            makeDiamond(card,centrex,centrey,boxwidth,dashstyle=diamond_dashstyle,colour=framecolour,linewidth=dashed_linewidth)
+            makeRBI(card,centrex,centrey,boxwidth,colour=framecolour,linewidth=dashed_linewidth)
+            makeBallStrike(card,centrex,centrey,boxwidth,colour=framecolour,linewidth=dashed_linewidth)
+            makeFoulPitch(card,centrex,centrey,boxwidth,colour=framecolour,linewidth=dashed_linewidth)
     
-    ## Team/game info
-    card.text(leftmargin+1.25*boxwidth, boxbase+20.5*0.5*boxheight, gamedata['venue'],fontsize=textfontsize,color='k', horizontalalignment='left',verticalalignment='center') # The reason for the double multiplication is for ease of comparison to the iterative lineup add
+    # Add column headers
+    x_headers = vertlines[:-1] + (vertlines[1:] - vertlines[:-1])/2.0
+    x_headers[1] = vertlines[1] + (vertlines[2] - vertlines[1])*0.1 # Left align
+    y_headers = horizsolidlines[0] + (horizsolidlines[1] - horizsolidlines[0])/2.0
     
-    card.text(leftmargin+np.sum(horizwidths[:6])+0.25*boxwidth, boxbase+20.5*0.5*boxheight, gamedata['date'],fontsize=textfontsize,color='k', horizontalalignment='left',verticalalignment='center')
+    boxcols = np.concatenate([['#', 'Batting', ''], range(1,10), ['AB','R','H','RBI','BB','SO']])
+    for i in range(len(x_headers)):
+        colname = boxcols[i]
+        if i == 1:
+            halign = 'left'
+        else:
+            halign = 'center'
+        card.text(x_headers[i], y_headers, colname, fontsize=textfontsize, color=framecolour, horizontalalignment=halign, verticalalignment='center')
     
-    highheadadd = '{1} ({2})'.format('',gamedata['longname'],gamedata['record'])
-    card.text(leftmargin+np.sum(horizwidths[:2])-0.25*boxwidth, boxbase+22.5*0.5*boxheight, highheadadd,fontsize=textfontsize,color='k', horizontalalignment='left',verticalalignment='center')
+    # Add total line
+    x_totals = x_headers[1:-6]
+    y_totals = horizsolidlines[-1] - (horizsolidlines[-1] - horizsolidlines[-2])/2.0
     
-    #Save
-    plt.savefig(os.path.join(scorecard_dir, 'scorecard_'+homeaway.lower()+'_'+sys.argv[2][:-4]+'.pdf'),bbox_inches='tight')
+    for i in range(len(x_totals)):
+        if i == 0:
+            totalstring = 'Totals (R/H/LoB)'
+            halign = 'left'
+        elif i == 1:
+            totalstring = ''
+            halign = 'center'
+        else:
+            totalstring = '/   /'
+            halign = 'center'
+        card.text(x_totals[i], y_totals, totalstring, fontsize=textfontsize, color=framecolour, horizontalalignment=halign, verticalalignment='center')
+    
+    # Add linup, if applicable
+    if data != None:
+        for i in range(9):
+            player = data['lineup'][i]
+            number, name, position = player.split(':')
+            yloc = totalyunits - top_margin - (0.5 + i+0.4/2.0)*boxheight
+            card.text(x_headers[0], yloc, number, fontsize=textfontsize, color='k', horizontalalignment='center', verticalalignment='center')
+            card.text(x_headers[1], yloc, name, fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
+            card.text(x_headers[2], yloc, position, fontsize=textfontsize, color='k', horizontalalignment='center', verticalalignment='center')
+
+
+def makePitcherStats(card, topbuffer, leftbuffer, boxwidth, data=None):
+    
+    boxheight = boxwidth * 0.65
+    pitchtop = totalyunits - topbuffer - boxwidth*11 # Using width because it is the height of the box score boxes
+    
+    # Define which of the vertical lines to use
+    vertical_booleans = np.array([True, True, False, True, True, True, True, True, True, True, True, True, True, False, False, False, False, False, False])
+    vertlines = leftbuffer + (vertical_locations[vertical_booleans == True])*boxwidth
+    
+    heights = np.array([0.5/0.65, 1, 1, 1, 1, 1, 1])*boxheight
+    horizlines = np.concatenate([[pitchtop], pitchtop - heights.cumsum()])
+    
+    # Make seven total rows (eight lines)
+    for hl in horizlines:
+        card.plot([vertlines[0], vertlines[-1]], [hl, hl], ls='-', lw=solid_linewidth, c=framecolour)
+    
+    # Make columns
+    for vl in vertlines:
+        card.plot([vl, vl], [horizlines[0], horizlines[-1]], ls='-', lw=solid_linewidth, c=framecolour)
+    
+    # Make column header text
+    x_headers = vertlines[:-1] + (vertlines[1:] - vertlines[:-1])/2.0
+    x_headers[1] = vertlines[1] + (vertlines[2] - vertlines[1])*0.1 # Left align
+    y_header = horizlines[0] + (horizlines[1] - horizlines[0])/2.0
+    
+    cols = ['#', 'Pitching', 'IP', 'BF', 'PC', 'H', 'R', 'ER', 'BB', 'SO', 'W/L']
+    for i in range(len(x_headers)):
+        colname = cols[i]
+        if i == 1:
+            halign = 'left'
+        else:
+            halign = 'center'
+        card.text(x_headers[i], y_header, colname, fontsize=textfontsize, color=framecolour, horizontalalignment=halign, verticalalignment='center')
+    
+    # Add starting pitcher, if applicable
+    if data != None:
+        number, name = data['pitcher'].split(':')
+        yloc = horizlines[1] + (horizlines[2] - horizlines[1])/2.0
+        card.text(x_headers[0], yloc, number, fontsize=textfontsize, color='k', horizontalalignment='center', verticalalignment='center')
+        card.text(x_headers[1], yloc, name, fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
+    
+
+def makeLineScore(card, topbuffer, leftbuffer, boxwidth, data=None):
+    
+    boxheight = boxwidth * 0.65
+    linetop = totalyunits - topbuffer - boxwidth*11 - boxwidth*5
+    
+    # Define which of the vertical lines to use
+    vertical_booleans = np.array([True, False, False, True, True, True, True, True, True, True, True, True, True, False, True, False, True, False, True])
+    vertlines = leftbuffer + (vertical_locations[vertical_booleans == True])*boxwidth
+    
+    heights = np.array([0.5/0.65, 1, 1])*boxheight
+    horizlines = np.concatenate([[linetop], linetop - heights.cumsum()])
+    
+    # Make horizontal lines
+    ## Top one should be shorter
+    for i in range(len(horizlines)):
+        hl = horizlines[i]
+        if i == 0:
+            card.plot([vertlines[1], vertlines[-1]], [hl, hl], ls='-', lw=solid_linewidth, c=framecolour)
+        else:
+            card.plot([vertlines[0], vertlines[-1]], [hl, hl], ls='-', lw=solid_linewidth, c=framecolour)
+    
+    # Make vertical lines
+    ## Again, first one should be shorter
+    for i in range(len(vertlines)):
+        vl = vertlines[i]
+        if i == 0:
+            card.plot([vl, vl], [horizlines[1], horizlines[-1]], ls='-', lw=solid_linewidth, c=framecolour)
+        else:
+            card.plot([vl, vl], [horizlines[0], horizlines[-1]], ls='-', lw=solid_linewidth, c=framecolour)
+    
+    # Make inning headers
+    x_headers = vertlines[1:-1] + (vertlines[2:] - vertlines[1:-1])/2.0
+    y_header = horizlines[0] + (horizlines[1] - horizlines[0])/2.0
+    
+    cols = np.concatenate([range(1,10), ['R', 'H', 'E']])
+    for i in range(len(x_headers)):
+        colname = cols[i]
+        card.text(x_headers[i], y_header, colname, fontsize=textfontsize, color=framecolour, horizontalalignment='center', verticalalignment='center')
+    
+    # Add team data, if defined
+    if data != None:
+        card.text(vertlines[0]+boxwidth*0.25, y_header-boxheight, data['away'], fontsize=textfontsize, color='k')
+        card.text(vertlines[0]+boxwidth*0.25, y_header-2*boxheight, data['home'], fontsize=textfontsize, color='k')
+        
+    
+# =============================================================================
+# Add Game Header
+# =============================================================================
+def addHeader(card, top_margin, left_margin, boxwidth, team, data=None):
+    
+    card.text(left_margin, totalyunits - top_margin + 1.25*boxwidth, f'{team} Team (Record):', fontsize=textfontsize, color=framecolour, horizontalalignment='left', verticalalignment='center')
+    if data != None:
+        card.text(left_margin + 2.75*boxwidth, totalyunits - top_margin + 1.25*boxwidth, '{0} {1}   ({2})'.format(data['region'],data['nickname'],data['record']), fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
+    
+    card.text(left_margin, totalyunits - top_margin + 0.5*boxwidth, '{0: <55}{1: <35}{2: <35}{3: <35}'.format('Venue:','Date:','Attendance:','Time:'), fontsize=textfontsize, color=framecolour, horizontalalignment='left', verticalalignment='center')
+    if data != None:
+        card.text(left_margin + boxwidth, totalyunits - top_margin + 0.5*boxwidth, data['venue'], fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
+        card.text(left_margin + 5.3*boxwidth, totalyunits - top_margin + 0.5*boxwidth, data['date'], fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
+    
