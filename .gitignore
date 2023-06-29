@@ -133,10 +133,8 @@ dmypy.json
 
 # Individual game files, except template file
 *.txt
-!template.txt
+!sample*.txt
 
 # Game-specific scorecards, not the general output PDF
 *.pdf
 !scorecard.pdf
-!scorecard_home.pdf
-!scorecard_away.pdf
