@@ -1,3 +1,4 @@
+
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
@@ -270,7 +271,13 @@ def addHeader(card, top_margin, left_margin, boxwidth, team, data=None):
     
     card.text(left_margin, totalyunits - top_margin + 1.25*boxwidth, f'{team} Team (Record):', fontsize=textfontsize, color=framecolour, horizontalalignment='left', verticalalignment='center')
     if data != None:
-        card.text(left_margin + 2.75*boxwidth, totalyunits - top_margin + 1.25*boxwidth, '{0} {1}   ({2})'.format(data['region'],data['nickname'],data['record']), fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
+        
+        try:
+            region = data['region'].split(' (')[0]
+        except IndexError:
+            region = data['region']
+    
+        card.text(left_margin + 2.75*boxwidth, totalyunits - top_margin + 1.25*boxwidth, '{0} {1}   ({2})'.format(region,data['nickname'],data['record']), fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
     
     card.text(left_margin, totalyunits - top_margin + 0.5*boxwidth, '{0: <55}{1: <35}{2: <35}{3: <35}'.format('Venue:','Date:','Attendance:','Time:'), fontsize=textfontsize, color=framecolour, horizontalalignment='left', verticalalignment='center')
     if data != None:

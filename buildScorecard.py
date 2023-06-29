@@ -1,6 +1,6 @@
 import scorecard as page
-import numpy as np
-import sys
+# import numpy as np
+import os, sys
 from pypdf import PdfMerger
 
 if len(sys.argv) > 1:
@@ -66,3 +66,6 @@ if fn == '':
 else:
     scorecardfn = fn+'.pdf'
 scorecard.write(scorecardfn)
+
+os.remove(homefn)
+os.remove(awayfn)
