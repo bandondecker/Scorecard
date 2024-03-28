@@ -138,3 +138,7 @@ dmypy.json
 # Game-specific scorecards, not the general output PDF
 *.pdf
 !scorecard.pdf
+
+# Year archives
+Archives/
+2023/
