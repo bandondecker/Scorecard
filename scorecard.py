@@ -94,14 +94,16 @@ def getData(fn:str,home:bool):
 # =============================================================================
 # Code to build the large grid elements
 # =============================================================================
-vertical_locations = np.cumsum([0, 0.5, 3, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+tenth = False
+if not tenth: # Double line after nine if not scoring extras
+    vertical_locations = np.cumsum([0, 0.5, 3, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 0.975, 0.05, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
 def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
     
     boxheight = boxwidth # The boxes in this section are symmetric
     
     # Define which of the vertical lines to use
     # For this, it's all 19 of them
-    vertical_booleans = np.array([True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True])
+    vertical_booleans = np.array([True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True])
     vertlines = left_margin + (vertical_locations[vertical_booleans == True])*boxwidth
 
     # Solid row heights
@@ -124,7 +126,7 @@ def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
 
     for hdl in horizdashedlines:
         card.plot([vertlines[0], vertlines[3]], [hdl, hdl], dashes=lineup_dashstyle, lw=dashed_linewidth, c=framecolour)
-        card.plot([vertlines[12], vertlines[-1]], [hdl, hdl], dashes=lineup_dashstyle, lw=dashed_linewidth, c=framecolour)
+        card.plot([vertlines[13], vertlines[-1]], [hdl, hdl], dashes=lineup_dashstyle, lw=dashed_linewidth, c=framecolour)
 
     #Make diamonds
     for i in range(3,12): # Horizontal values of innings
@@ -141,7 +143,7 @@ def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
     x_headers[1] = vertlines[1] + (vertlines[2] - vertlines[1])*0.1 # Left align
     y_headers = horizsolidlines[0] + (horizsolidlines[1] - horizsolidlines[0])/2.0
     
-    boxcols = np.concatenate([['#', 'Batting', ''], range(1,10), ['AB','R','H','RBI','BB','SO']])
+    boxcols = np.concatenate([['#', 'Batting', ''], range(1,10), ['', 'AB','R','H','RBI','BB','SO']])
     for i in range(len(x_headers)):
         colname = boxcols[i]
         if i == 1:
@@ -151,7 +153,7 @@ def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
         card.text(x_headers[i], y_headers, colname, fontsize=textfontsize, color=framecolour, horizontalalignment=halign, verticalalignment='center')
     
     # Add total line
-    x_totals = x_headers[1:-6]
+    x_totals = x_headers[1:-7]
     y_totals = horizsolidlines[-1] - (horizsolidlines[-1] - horizsolidlines[-2])/2.0
     
     for i in range(len(x_totals)):
@@ -183,7 +185,7 @@ def makePitcherStats(card, topbuffer, leftbuffer, boxwidth, data=None):
     pitchtop = totalyunits - topbuffer - boxwidth*11 # Using width because it is the height of the box score boxes
     
     # Define which of the vertical lines to use
-    vertical_booleans = np.array([True, True, False, True, True, True, True, True, True, True, True, True, True, False, False, False, False, False, False])
+    vertical_booleans = np.array([True, True, False, True, True, True, True, True, True, True, True, True, True, False, False, False, False, False, False, False])
     vertlines = leftbuffer + (vertical_locations[vertical_booleans == True])*boxwidth
     
     heights = np.array([0.5/0.65, 1, 1, 1, 1, 1, 1])*boxheight
@@ -225,7 +227,7 @@ def makeLineScore(card, topbuffer, leftbuffer, boxwidth, data=None):
     linetop = totalyunits - topbuffer - boxwidth*11 - boxwidth*5
     
     # Define which of the vertical lines to use
-    vertical_booleans = np.array([True, False, False, True, True, True, True, True, True, True, True, True, True, False, True, False, True, False, True])
+    vertical_booleans = np.array([True, False, False, True, True, True, True, True, True, True, True, True, True, True, False, True, False, True, False, True])
     vertlines = leftbuffer + (vertical_locations[vertical_booleans == True])*boxwidth
     
     heights = np.array([0.5/0.65, 1, 1])*boxheight
@@ -253,7 +255,7 @@ def makeLineScore(card, topbuffer, leftbuffer, boxwidth, data=None):
     x_headers = vertlines[1:-1] + (vertlines[2:] - vertlines[1:-1])/2.0
     y_header = horizlines[0] + (horizlines[1] - horizlines[0])/2.0
     
-    cols = np.concatenate([range(1,10), ['R', 'H', 'E']])
+    cols = np.concatenate([range(1,10), ['', 'R', 'H', 'E']])
     for i in range(len(x_headers)):
         colname = cols[i]
         card.text(x_headers[i], y_header, colname, fontsize=textfontsize, color=framecolour, horizontalalignment='center', verticalalignment='center')
@@ -279,7 +281,7 @@ def addHeader(card, top_margin, left_margin, boxwidth, team, data=None):
     
         card.text(left_margin + 2.75*boxwidth, totalyunits - top_margin + 1.25*boxwidth, '{0} {1}   ({2})'.format(region,data['nickname'],data['record']), fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
     
-    card.text(left_margin, totalyunits - top_margin + 0.5*boxwidth, '{0: <55}{1: <35}{2: <35}{3: <35}'.format('Venue:','Date:','Attendance:','Time:'), fontsize=textfontsize, color=framecolour, horizontalalignment='left', verticalalignment='center')
+    card.text(left_margin, totalyunits - top_margin + 0.5*boxwidth, '{0: <55}{1: <45}{2: <35}{3: <35}'.format('Venue:','Date:','Attendance:','Time:'), fontsize=textfontsize, color=framecolour, horizontalalignment='left', verticalalignment='center')
     if data != None:
         card.text(left_margin + boxwidth, totalyunits - top_margin + 0.5*boxwidth, data['venue'], fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
         card.text(left_margin + 5.3*boxwidth, totalyunits - top_margin + 0.5*boxwidth, data['date'], fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')

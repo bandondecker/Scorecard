@@ -18,8 +18,8 @@ totalyunits = 27.9 #Height in cm = 27.94
 boxwidth = 21.5/17.0 #Original boxwidth was 2, in arbitrary units. Now should be in cm, or so.
 
 top_margin = 2
-left_margin_home = 1.25
-left_margin_away = 0.1
+left_margin_home = 0.75
+left_margin_away = 0.75
 
 
 # =============================================================================
