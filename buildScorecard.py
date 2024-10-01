@@ -1,7 +1,14 @@
 import scorecard as page
 # import numpy as np
 import os, sys
+import argparse
 from pypdf import PdfMerger
+
+# =============================================================================
+# Set up argument parser
+# =============================================================================
+#parser = argparse.ArgumentParser(description='Build a new scorecard with given parameters')
+#parser.add_argument('filename', help=
 
 if len(sys.argv) > 1:
     fn = sys.argv[1]

@@ -7,6 +7,8 @@ import sys, os
 # =============================================================================
 # Set global defaults
 # =============================================================================
+tenth = True
+
 totalxunits = 21.6 #Width in cm = 21.59
 totalyunits = 27.9 #Height in cm = 27.94
 
@@ -18,7 +20,6 @@ lineup_dashstyle = tuple(np.array((1.0,1.0))*25/(0.5*boxwidth))
 diamond_dashstyle = tuple(np.array((1.5,1.5))*7.5/(0.35*boxwidth))
 solid_linewidth = 0.5
 textfontsize = 8
-
 
 # =============================================================================
 # Code to create the card and define the dimensions
@@ -74,31 +75,33 @@ def makeFoulPitch(card,x,y,boxwdith,colour='r',linewidth=0.1):
 def getData(fn:str,home:bool):
     idx = np.abs(home - 1)
     lines = open(fn).readlines()
-    date = lines[0][:-1]
-    venue = lines[1][:-1]
-    home_region, away_region = lines[2][:-1].split(' v ')
-    region_name = lines[2][:-1].split(' v ')[idx]
-    nickname = lines[3][:-1].split(' v ')[idx]
-    record = lines[4][:-1].split(' v ')[idx]
+    title = lines[0][:-1]
+    date = lines[1][:-1]
+    venue = lines[2][:-1]
+    home_region, away_region = lines[3][:-1].split(' v ')
+    region_name = lines[3][:-1].split(' v ')[idx]
+    nickname = lines[4][:-1].split(' v ')[idx]
+    record = lines[5][:-1].split(' v ')[idx]
     
     lineup = []
-    for i in range(6,15):
+    for i in range(7,16):
         entry = lines[i][:-1].split(' v ')[idx]
         lineup.append(entry)
-    pitcher = lines[16][:-1].split(' v ')[idx]
+    pitcher = lines[17][:-1].split(' v ')[idx]
 
-    data = {'date':date,'venue':venue,'home':home_region,'away':away_region,'region':region_name,'nickname':nickname,'record':record,'lineup':lineup,'pitcher':pitcher}
+    data = {'title':title, 'date':date,'venue':venue,'home':home_region,'away':away_region,'region':region_name,'nickname':nickname,'record':record,'lineup':lineup,'pitcher':pitcher}
     return data
 
 
 # =============================================================================
 # Code to build the large grid elements
 # =============================================================================
-tenth = False
 if not tenth: # Double line after nine if not scoring extras
     vertical_locations = np.cumsum([0, 0.5, 3, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 0.975, 0.05, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+else:
+    vertical_locations = np.cumsum([0, 0.5, 3, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
 def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
-    
+    left_margin = left_margin - 0.55*boxwidth*tenth
     boxheight = boxwidth # The boxes in this section are symmetric
     
     # Define which of the vertical lines to use
@@ -129,7 +132,7 @@ def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
         card.plot([vertlines[13], vertlines[-1]], [hdl, hdl], dashes=lineup_dashstyle, lw=dashed_linewidth, c=framecolour)
 
     #Make diamonds
-    for i in range(3,12): # Horizontal values of innings
+    for i in range(3,13): # Horizontal values of innings
         centrex = (vertlines[i] + vertlines[i+1])/2.0
         for j in range(1,10): # Vertical values of batting order
             centrey = (horizsolidlines[j] + horizsolidlines[j+1])/2.0
@@ -143,7 +146,10 @@ def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
     x_headers[1] = vertlines[1] + (vertlines[2] - vertlines[1])*0.1 # Left align
     y_headers = horizsolidlines[0] + (horizsolidlines[1] - horizsolidlines[0])/2.0
     
-    boxcols = np.concatenate([['#', 'Batting', ''], range(1,10), ['', 'AB','R','H','RBI','BB','SO']])
+    if not tenth:
+        boxcols = np.concatenate([['#', 'Batting', ''], range(1,10), ['', 'AB','R','H','RBI','BB','SO']])
+    else:
+        boxcols = np.concatenate([['#', 'Batting', ''], range(1,11), ['AB','R','H','RBI','BB','SO']])
     for i in range(len(x_headers)):
         colname = boxcols[i]
         if i == 1:
@@ -153,7 +159,10 @@ def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
         card.text(x_headers[i], y_headers, colname, fontsize=textfontsize, color=framecolour, horizontalalignment=halign, verticalalignment='center')
     
     # Add total line
-    x_totals = x_headers[1:-7]
+    if not tenth:
+        x_totals = x_headers[1:-7]
+    else:
+        x_totals = x_headers[1:-6]
     y_totals = horizsolidlines[-1] - (horizsolidlines[-1] - horizsolidlines[-2])/2.0
     
     for i in range(len(x_totals)):
@@ -180,6 +189,7 @@ def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
 
 
 def makePitcherStats(card, topbuffer, leftbuffer, boxwidth, data=None):
+    leftbuffer = leftbuffer - 0.55*boxwidth*tenth
     
     boxheight = boxwidth * 0.65
     pitchtop = totalyunits - topbuffer - boxwidth*11 # Using width because it is the height of the box score boxes
@@ -222,6 +232,7 @@ def makePitcherStats(card, topbuffer, leftbuffer, boxwidth, data=None):
     
 
 def makeLineScore(card, topbuffer, leftbuffer, boxwidth, data=None):
+    leftbuffer = leftbuffer - 0.55*boxwidth*tenth
     
     boxheight = boxwidth * 0.65
     linetop = totalyunits - topbuffer - boxwidth*11 - boxwidth*5
@@ -255,7 +266,10 @@ def makeLineScore(card, topbuffer, leftbuffer, boxwidth, data=None):
     x_headers = vertlines[1:-1] + (vertlines[2:] - vertlines[1:-1])/2.0
     y_header = horizlines[0] + (horizlines[1] - horizlines[0])/2.0
     
-    cols = np.concatenate([range(1,10), ['', 'R', 'H', 'E']])
+    if not tenth:
+        cols = np.concatenate([range(1,10), ['', 'R', 'H', 'E']])
+    else:
+        cols = np.concatenate([range(1,11), ['R', 'H', 'E']])
     for i in range(len(x_headers)):
         colname = cols[i]
         card.text(x_headers[i], y_header, colname, fontsize=textfontsize, color=framecolour, horizontalalignment='center', verticalalignment='center')
@@ -270,16 +284,18 @@ def makeLineScore(card, topbuffer, leftbuffer, boxwidth, data=None):
 # Add Game Header
 # =============================================================================
 def addHeader(card, top_margin, left_margin, boxwidth, team, data=None):
+    left_margin = left_margin - 0.55*boxwidth*tenth
     
-    card.text(left_margin, totalyunits - top_margin + 1.25*boxwidth, f'{team} Team (Record):', fontsize=textfontsize, color=framecolour, horizontalalignment='left', verticalalignment='center')
+    card.text(left_margin, totalyunits - top_margin + 1.1*boxwidth, f'{team} Team (Record):', fontsize=textfontsize, color=framecolour, horizontalalignment='left', verticalalignment='center')
     if data != None:
         
         try:
             region = data['region'].split(' (')[0]
         except IndexError:
             region = data['region']
-    
-        card.text(left_margin + 2.75*boxwidth, totalyunits - top_margin + 1.25*boxwidth, '{0} {1}   ({2})'.format(region,data['nickname'],data['record']), fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
+            
+        card.text(left_margin + np.sum([0, 0.5, 3, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])*boxwidth/2.0, totalyunits - top_margin + 1.5*boxwidth, data['title'], fontsize=textfontsize, color='k', horizontalalignment='center', verticalalignment='center')
+        card.text(left_margin + 2.75*boxwidth, totalyunits - top_margin + 1.1*boxwidth, '{0} {1}   ({2})'.format(region,data['nickname'],data['record']), fontsize=textfontsize, color='k', horizontalalignment='left', verticalalignment='center')
     
     card.text(left_margin, totalyunits - top_margin + 0.5*boxwidth, '{0: <55}{1: <45}{2: <35}{3: <35}'.format('Venue:','Date:','Attendance:','Time:'), fontsize=textfontsize, color=framecolour, horizontalalignment='left', verticalalignment='center')
     if data != None:
