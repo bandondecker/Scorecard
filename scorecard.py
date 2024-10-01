@@ -7,7 +7,7 @@ import sys, os
 # =============================================================================
 # Set global defaults
 # =============================================================================
-tenth = True
+tenth = False
 
 totalxunits = 21.6 #Width in cm = 21.59
 totalyunits = 27.9 #Height in cm = 27.94
@@ -132,7 +132,7 @@ def makeBoxScore(card, top_margin, left_margin, boxwidth, data=None):
         card.plot([vertlines[13], vertlines[-1]], [hdl, hdl], dashes=lineup_dashstyle, lw=dashed_linewidth, c=framecolour)
 
     #Make diamonds
-    for i in range(3,13): # Horizontal values of innings
+    for i in range(3,12+tenth): # Horizontal values of innings
         centrex = (vertlines[i] + vertlines[i+1])/2.0
         for j in range(1,10): # Vertical values of batting order
             centrey = (horizsolidlines[j] + horizsolidlines[j+1])/2.0
