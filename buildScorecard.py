@@ -2,7 +2,7 @@ import scorecard as page
 # import numpy as np
 import os, sys
 import argparse
-from pypdf import PdfMerger
+from pypdf import PdfWriter
 
 # =============================================================================
 # Set up argument parser
@@ -64,7 +64,7 @@ awaypage.savefig(awayfn, bbox_inches='tight')
 # =============================================================================
 # Merge pdfs
 # =============================================================================
-scorecard = PdfMerger()
+scorecard = PdfWriter()
 for pdf in [homefn, awayfn]:
     scorecard.append(pdf)
 
