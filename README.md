@@ -20,8 +20,14 @@ The syntax for the game files is very precise and unfortunately there
 is not a lot of error handling yet. (I plan to build some in!) But
 there are two sample files to use as templates.
 
-The first two lines of the game file are general game information,
-line 1 is the date and line 2 is the venue. These will go into the
+The first line is for any sort of header you want to add to the card,
+eg 'Opening Day' or 'World Series Game 1', or similar. If it's just a
+normal game and you don't want a header, just leave the line blank,
+but do still include it, otherwise the counting of the rest of the
+lines will be affected.
+
+The next two lines of the game file are general game information,
+line 2 is the date and line 3 is the venue. These will go into the
 appropriate areas on the scorecard and it's just string
 printing---whatever goes in will be put in those spots.
 
